@@ -1,4 +1,3 @@
-import com.google.common.collect.Lists;
 import com.twitter.hbc.ClientBuilder;
 import com.twitter.hbc.core.Client;
 import com.twitter.hbc.core.Constants;
@@ -8,12 +7,15 @@ import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
-import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
@@ -22,15 +24,18 @@ import java.util.concurrent.TimeUnit;
 
 public class twitterProducer {
 
-    public static void main(String[] args) throws IOException {
-        new twitterProducer().run();
+    public static void main(String[] args) {
+        List<String> twitterTopic = new ArrayList<>();
+        twitterTopic.addAll(Arrays.asList("football","block chain"));
+
+        new twitterProducer().run(twitterTopic);
     }
 
-    private Client createTwitterClient(BlockingQueue<String> msgQueue) {
+    private Client createTwitterClient(BlockingQueue<String> msgQueue, List<String> twitterTopic) {
 
         Hosts hosebirdHosts = new HttpHosts(Constants.STREAM_HOST);
         StatusesFilterEndpoint hosebirdEndpoint = new StatusesFilterEndpoint();
-        List<String> terms = Lists.newArrayList("lolita");
+        List<String> terms = twitterTopic;// Lists.newArrayList("lolita");
         hosebirdEndpoint.trackTerms(terms);
         Properties prop = Helper.getPropValues();
         String consumerKey = prop.getProperty("consumerKey");
@@ -46,12 +51,12 @@ public class twitterProducer {
         return builder.build();
     }
 
-    private void run() throws IOException {
+    private void run(List<String> twitterTopic) {
 
         Logger logger = LoggerFactory.getLogger(twitterProducer.class.getName());
         BlockingQueue<String> msgQueue = new LinkedBlockingQueue<>(1000);
         // create twitter client
-        Client twitterClient = createTwitterClient(msgQueue);
+        Client twitterClient = createTwitterClient(msgQueue, twitterTopic);
         twitterClient.connect();
         // create kafka producer
         KafkaProducer<String, String> producer = createProducer();

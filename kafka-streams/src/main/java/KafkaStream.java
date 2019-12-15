@@ -18,7 +18,7 @@ public class KafkaStream {
         StreamsBuilder builder = new StreamsBuilder();
         KStream<String,String> stream = builder.stream("twitter_tweets");
         KStream<String,String> filterStream = stream.filter(
-                (k,v) -> filterByFollowers(v) > 1000
+                (k,v) -> filterByFollowers(v) > 10000
         );
         filterStream.to("popular_tweets");
 
